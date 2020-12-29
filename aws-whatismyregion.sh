@@ -10,12 +10,13 @@
 # Download: http://www.pc-tools.net/unix/grepcidr/
 
 # @raycast.schemaVersion 1
-# @raycast.author Oguzhan Yilmaz
+# @raycast.author Oğuzhan Yılmaz
 # @raycast.authorURL https://github.com/c1982
 # @raycast.title Find AWS Region by IP
 # @raycast.mode fullOutput
 # @raycast.packageName Developer Utilities
 # @raycast.icon 🤖
+# @raycast.description Copies the AWS IPv4 to the clipboard.
 
 IPADDR=$(pbpaste)
 IPRANGEFILE="${PWD}/ip-ranges.json"
@@ -39,7 +40,7 @@ check_file_older_than_7days(){
     fi
 }
 
-find_prefix(){
+find_aws_prefix(){
     for range in $AWS_RANGES; do
        prefix=$(grepcidr "$range" <(echo "$IPADDR") >/dev/null && echo "$range")
        if [[ ! -z $prefix ]]; then
@@ -82,11 +83,11 @@ check_file_older_than_7days
 check_valid_ipv4
 
 AWS_RANGES=$(cat $IPRANGEFILE | jq -r '.prefixes[] | select(.service=="EC2") | select(.ip_prefix) | .ip_prefix')
-PREFIX=$(find_prefix)
+PREFIX=$(find_aws_prefix)
 if [[ -z $PREFIX ]]; then
     echo "$IPADDR is not in AWS range"
     exit
 fi
 
 SHOW_RANGE=$(cat $IPRANGEFILE | jq '.prefixes[] | select(.service=="EC2" and .ip_prefix=="'$PREFIX'")')
-echo $SHOW_RANGE | jq
+echo $SHOW_RANGE | jq --arg ip $IPADDR '. + {"ip":"'$IPADDR'"}'
